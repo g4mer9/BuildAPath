@@ -3,17 +3,15 @@ class Path extends Phaser.Scene {
     graphics;
     curve;
     path;
-
+    runMode;
     constructor(){
         super("pathMaker");
     }
-
     preload() {
         this.load.setPath("./assets/");                        // Set load path
         this.load.image("x-mark", "numeralX.png");             // x marks the spot
         this.load.image("enemyShip", "enemyGreen1.png");       // spaceship that runs along the path
     }
-
     create() {
         // Create a curve, for use with the path
         // Initial set of points are only used to ensure there is something on screen to begin with.
@@ -47,6 +45,7 @@ class Path extends Phaser.Scene {
 
         // TODO:
         //  - set the run mode flag to false (after implenting run mode)
+        this.runMode = 0;
 
         // Create enemyShip as a follower type of sprite
         // Call startFollow() on enemyShip to have it follow the curve
@@ -55,14 +54,12 @@ class Path extends Phaser.Scene {
 
         document.getElementById('description').innerHTML = '<h2>Path.js</h2><br>ESC: Clear points <br>O - output points <br>R - run mode';
     }
-
     // Draws an x mark at every point along the spline.
     drawPoints() {
         for (let point of this.curve.points) {
             this.xImages.push(this.add.image(point.x, point.y, "x-mark"));
         }
     }
-
     // Clear points
     // Removes all of the points, and then clears the line and x-marks
     clearPoints() {
@@ -72,20 +69,17 @@ class Path extends Phaser.Scene {
             img.destroy();
         }
     }
-
     // Add a point to the spline
     addPoint(point) {
         this.curve.addPoint(point);
         this.xImages.push(this.add.image(point.x, point.y, "x-mark"));
     }
-
     // Draws the spline
     drawLine() {
         this.graphics.clear();                      // Clear the existing line
         this.graphics.lineStyle(2, 0xffffff, 1);    // A white line
         this.curve.draw(this.graphics, 32);         // Draw the spline
     }
-
     update() {
 
         if (Phaser.Input.Keyboard.JustDown(this.ESCKey)) {
@@ -94,13 +88,8 @@ class Path extends Phaser.Scene {
             // * Add code to check if run mode is active
             //   If run mode is active, then don't call clearPoints()
             //   (i.e., can only clear points when not in run mode)
-
-            this.clearPoints();
-
+            if(!this.runMode)this.clearPoints();
         }
-
-
-
         if (Phaser.Input.Keyboard.JustDown(this.oKey)) {
             console.log("Output the points");
 
@@ -115,14 +104,27 @@ class Path extends Phaser.Scene {
             //  point0.x, point0.y,
             //  point1.x, point1.y
             // ]
-        }   
 
+            var points_arr = [];
+            for (let point of this.curve.points) { 
+                points_arr.push(point.x);
+                points_arr.push(point.y);
+            }
+            console.log(points_arr);
+        }
         if (Phaser.Input.Keyboard.JustDown(this.rKey)) {
             console.log("Run mode");
             //
             // TODO: 
             // Implement run mode
             // Check for runMode active
+            if(this.runMode) {
+                //stopfollow
+                
+            }
+            else {
+                
+            }
             //   If active:
             //   - call stopFollow on the enemyShip to halt following behavior
             //   - make the enemyShip sprite invisible
