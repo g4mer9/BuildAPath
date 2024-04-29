@@ -3,7 +3,7 @@ class Shmup extends Phaser.Scene {
     graphics;
     curve1; curve2; curve3; curve4;
     path;
-    runMode;
+    gameActive;
     constructor(){
         super("pathMaker");
     }
@@ -11,6 +11,10 @@ class Shmup extends Phaser.Scene {
         this.load.setPath("./assets/");                        // Set load path
         this.load.image("x-mark", "numeralX.png");             // x marks the spot
         this.load.image("enemyShip", "enemyGreen1.png");       // spaceship that runs along the path
+        this.load.image("player", "character_squareRed.png");
+        this.load.image("bullet", "effect_shot.png");
+        this.load.image("cursor", "navigation_n.png");
+        
     }
     create() {
         // Create a curve, for use with the path
@@ -29,21 +33,35 @@ class Shmup extends Phaser.Scene {
 
         // Initialize Phaser graphics, used to draw lines
         this.graphics = this.add.graphics();
+        this.gameActive = false;
 
-        // Define key bindings
-        this.ESCKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-        this.oKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
-        this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        
         
         // Draw initial graphics
         this.xImages = [];
-        this.drawPoints();
         this.drawLine();
 
         //onclick
         this.mouseDown = this.input.on('pointerdown', (pointer) => {
             console.log("click stuff here");
         });
+
+        this.input.on('pointermove', pointer => {
+            this.pointer = pointer;
+        })
+
+        my.sprite.player = this.add.sprite(300, 800, "player", "character_squareRed.png");
+        my.sprite.player.visible = false;
+
+        my.sprite.cursor = this.add.sprite(300, 800, "cursor", "navigation_n.png");
+        my.sprite.cursor.visible = false;
+        
+        // Define key bindings
+        this.ESCKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        
+        this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
         //ADD SHIP TO ARRAY OF ACTIVE SHIPS
         my.sprite.enemyShip = this.add.follower(this.curve, 10, 10, "enemyShip");
@@ -55,33 +73,14 @@ class Shmup extends Phaser.Scene {
 
 
     //DELETE ALL THIS LATER --------------------------------------------------------------------------------------------------------
-
-
-    // Draws an x mark at every point along the spline.
-    drawPoints() {
-        for (let point of this.curve1.points1) {
-            this.xImages.push(this.add.image(point.x, point.y, "x-mark"));
-        }
-    }
-    // Clear points
-    // Removes all of the points, and then clears the line and x-marks
-    clearPoints() {
-        this.curve.points1 = [];
-        this.graphics.clear();
-        for (let img of this.xImages) {
-            img.destroy();
-        }
-    }
-    // Add a point to the spline
-    addPoint(point) {
-        this.curve.addPoint(point);
-        this.xImages.push(this.add.image(point.x, point.y, "x-mark"));
-    }
     // Draws the spline
     drawLine() {
         this.graphics.clear();                      // Clear the existing line
         this.graphics.lineStyle(2, 0xffffff, 1);    // A white line
         this.curve1.draw(this.graphics, 32);         // Draw the spline
+        this.curve2.draw(this.graphics, 32);         // Draw the spline
+        this.curve3.draw(this.graphics, 32);         // Draw the spline
+        this.curve4.draw(this.graphics, 32);         // Draw the spline
     }
 
 
@@ -90,9 +89,43 @@ class Shmup extends Phaser.Scene {
 
 
     update() {
+        if(this.gameActive) {
 
-        
+            if(this.pointer) {
+                let angle = Phaser.Math.Angle.Between(my.sprite.player.x, my.sprite.player.y, this.pointer.x, this.pointer.y);
+                // Set the cursor's position relative to the player
+                let distance = 50; // Distance from the center of the player to the cursor
+                my.sprite.cursor.x = my.sprite.player.x + distance * Math.cos(angle);
+                my.sprite.cursor.y = my.sprite.player.y + distance * Math.sin(angle);
 
+                // Rotate cursor to face towards the calculated angle
+                my.sprite.cursor.rotation = angle;
+
+            }
+
+
+            if(this.keyA.isDown && my.sprite.player.x > 25) {
+                my.sprite.player.x -=9;
+                my.sprite.cursor.x -= 9;
+            } 
+
+            else if(this.keyD.isDown && my.sprite.player.x < 650) {
+                my.sprite.player.x +=9;
+                my.sprite.cursor.x += 9;
+            }
+
+            if(this.keySpace.isDown && (my.sprite.bullet == undefined || my.sprite.bullet.scene == undefined) ) my.sprite.bullet = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "bullet", "effect_shot.png");
+            //console.log(my.sprite.bullet)
+            if(my.sprite.bullet != undefined) {
+                my.sprite.bullet.y -= 10; 
+                if(my.sprite.bullet.y <= 0) my.sprite.bullet.destroy(1);
+            }
+        }
+        else if(this.ESCKey.isDown) {
+            my.sprite.player.visible = true;
+            my.sprite.cursor.visible = true;
+            this.gameActive = true;
+        }
     }
 
 }
