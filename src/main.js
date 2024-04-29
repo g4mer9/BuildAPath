@@ -19,9 +19,9 @@ let config = {
     render: {
         pixelArt: true  // prevent pixel art from getting blurred when scaled
     },
-    width: 1000,
-    height: 800,
-    scene: [Path]
+    width: 672,
+    height: 864,
+    scene: [Shmup]
 }
 
 // Global variable to hold sprites
