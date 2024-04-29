@@ -120,10 +120,26 @@ class Path extends Phaser.Scene {
             // Check for runMode active
             if(this.runMode) {
                 //stopfollow
-                
+                my.sprite.enemyShip.stopFollow();
+                my.sprite.enemyShip.visible = false;
+                this.runMode = false;
             }
             else {
-                
+                this.runMode = true;
+                if(this.curve.points.length > 0) {
+                    my.sprite.enemyShip.x = this.curve.points[0].x;
+                    my.sprite.enemyShip.y = this.curve.points[0].y;
+                    my.sprite.enemyShip.visible = true;
+                    my.sprite.enemyShip.startFollow({from: 0,
+                        to: 1,
+                        delay: 0,
+                        duration: 2000,
+                        ease: 'Sine.easeInOut',
+                        repeat: -1,
+                        yoyo: true,
+                        rotateToPath: true,
+                        rotationOffset: -90});
+                }
             }
             //   If active:
             //   - call stopFollow on the enemyShip to halt following behavior
