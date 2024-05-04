@@ -117,6 +117,16 @@ class Shmup extends Phaser.Scene {
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    collides(a, b) 
+    // a & b are sprites/
+    // gameObjs(AABBs)
+    {
+    if (Math.abs(a.x - b.x) > (a.rx + b.rx))return false;
+
+    if (Math.abs(a.y - b.y) > (a.ry + b.ry)) return false;
+
+    return true;
+    }
 
 
     shoot() {
@@ -128,10 +138,6 @@ class Shmup extends Phaser.Scene {
             my.sprite.bullet.rotation = angle;
             this.bullets.push(my.sprite.bullet);
         }
-    }
-
-    startPathfind(follower, targetX, targetY) {
-        var easyStar = new EasyStar.js()
     }
 
     update() {
@@ -163,13 +169,13 @@ class Shmup extends Phaser.Scene {
 
 
             if(this.keyA.isDown && my.sprite.player.x > 25) {
-                my.sprite.player.x -=9;
-                my.sprite.cursor.x -= 9;
+                my.sprite.player.x -=18;
+                my.sprite.cursor.x -= 18;
             } 
 
             else if(this.keyD.isDown && my.sprite.player.x < 650) {
-                my.sprite.player.x +=9;
-                my.sprite.cursor.x += 9;
+                my.sprite.player.x +=18;
+                my.sprite.cursor.x += 18;
             }
 
             if(this.pointer) {
@@ -184,14 +190,41 @@ class Shmup extends Phaser.Scene {
                 //console.log(b.y)
                 //b.y -= 10; 
 
-                b.x += 25 * Math.cos(b.dir);
-                b.y += 25 * Math.sin(b.dir);
+                b.x += 50 * Math.cos(b.dir);
+                b.y += 50 * Math.sin(b.dir);
 
                 if(b.y <= 0 || b.x >= 672 || b.x <= 0 || b.y >= 864) {
                     b.destroy(1);
                     this.bullets.splice(i, 1);
                 }
             }
+
+            this.enemies.forEach(enemy => {
+                
+                this.bullets.forEach(bullet => {
+                    if(this.collides(enemy, bullet)) {
+                        bullet.destroy(1);
+                        
+                    }
+                });
+
+
+                if (enemy.isMoving) {
+                    
+                    let dx = enemy.targetX - enemy.x;
+                    let dy = enemy.targetY - enemy.y;
+                    let angle = Math.atan2(dy, dx);
+                    let speed = 500; // Speed pixels per second
+                    //console.log("before" + enemy.x);
+                    enemy.x += speed * Math.cos(angle) * 30 / 1000;
+                    enemy.y += speed * Math.sin(angle) * 30 / 1000;
+                    //console.log("after" + enemy.x);
+                    // Check if the enemy has reached the target
+                    if (Phaser.Math.Distance.Between(enemy.x, enemy.y, enemy.targetX, enemy.targetY) < 10) {
+                        enemy.isMoving = false; // Stop moving once the target is close enough
+                    }
+                }
+            });
             /**for (let i = this.enemies.length - 1; i >= 0; i--) {
                 let e = this.enemies[i];
                 
@@ -205,8 +238,19 @@ class Shmup extends Phaser.Scene {
                     my.sprite.enemy = this.add.follower(this.curve1, this.points1[0], this.points1[1], "e_blue");
                     my.sprite.enemy.setScale(.5)
                     this.enemies.push(my.sprite.enemy);
-                    my.sprite.enemy.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, on_complete: () => { this.startPathfind(my.sprite.enemy, 20, 20)}});
-
+                    my.sprite.enemy.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, onComplete: () => { 
+                        my.sprite.enemy.stopFollow();
+                        my.sprite.e = this.add.sprite(my.sprite.enemy.x, my.sprite.enemy.y, "e_blue", "shipBlue.png");
+                        my.sprite.e.setScale(.5);
+                        let i = this.enemies.length - 1;
+                        my.sprite.enemy.destroy(1);
+                        this.enemies.splice(i, 1);
+                        this.enemies.push(my.sprite.e);
+                        my.sprite.e.targetX = 50; // Target X position
+                        my.sprite.e.targetY = 50; // Target Y position
+                        my.sprite.e.isMoving = true;
+                    }});
+                    
                     break;
             }
             this.gameFrame++;

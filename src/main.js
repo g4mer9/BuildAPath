@@ -19,6 +19,7 @@ let config = {
     render: {
         pixelArt: true  // prevent pixel art from getting blurred when scaled
     },
+    fps: { forceSetTimeOut: true, target: 30 },
     width: 672,
     height: 864,
     scene: [Shmup]
