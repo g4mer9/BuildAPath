@@ -44,13 +44,13 @@ class Shmup extends Phaser.Scene {
         this.points3 = [667, 610, 491, 556, 318, 534, 138, 537, 37, 607, 7, 735, 25, 836, 85, 848, 158, 804, 146, 724, 116, 635, 81, 520];
         this.points4 = [5, 610, 181, 556, 354, 534, 534, 537, 635, 607, 665, 735, 647, 836, 587, 848, 514, 804, 526, 724, 556, 635, 591, 520];
         this.curve1 = new Phaser.Curves.Spline(this.points1);
-        this.curve1.points1 = this.points1;
+        //this.curve1.points1 = this.points1;
         this.curve2 = new Phaser.Curves.Spline(this.points2);
-        this.curve2.points2 = this.points2;
+        //this.curve2.points2 = this.points2;
         this.curve3 = new Phaser.Curves.Spline(this.points3);
-        this.curve3.points3 = this.points3;
+        //this.curve3.points3 = this.points3;
         this.curve4 = new Phaser.Curves.Spline(this.points4);
-        this.curve4.points4 = this.points4;
+        //this.curve4.points4 = this.points4;
 
 
         // Initialize Phaser graphics, used to draw lines
@@ -103,7 +103,7 @@ class Shmup extends Phaser.Scene {
 
 
 
-    //DELETE ALL THIS LATER --------------------------------------------------------------------------------------------------------
+//DELETE ALL THIS LATER --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // Draws the spline
     drawLine() {
         this.graphics.clear();                      // Clear the existing line
@@ -115,7 +115,7 @@ class Shmup extends Phaser.Scene {
     }
 
 
-    //---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -128,6 +128,10 @@ class Shmup extends Phaser.Scene {
             my.sprite.bullet.rotation = angle;
             this.bullets.push(my.sprite.bullet);
         }
+    }
+
+    startPathfind(follower, targetX, targetY) {
+        var easyStar = new EasyStar.js()
     }
 
     update() {
@@ -188,26 +192,27 @@ class Shmup extends Phaser.Scene {
                     this.bullets.splice(i, 1);
                 }
             }
-            for (let i = this.enemies.length - 1; i >= 0; i--) {
+            /**for (let i = this.enemies.length - 1; i >= 0; i--) {
                 let e = this.enemies[i];
                 
                 e.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: -1, yoyo: true, rotateToPath: true, rotationOffset: -90});
-            }
+            }**/
     
-            //GAME PROGRESSION LOGIC====================================================================================================
+//GAME PROGRESSION LOGIC===================================================================================================================================================================================================================
     
             switch(this.gameFrame) {
                 case 60:
-                    for(let i = 0; i < 3; i++) {
-                        my.sprite.enemy = this.add.follower(this.curve1, this.curve1.points1[0].x, (this.curve1.points1[0].y), "e_blue");
-                        //his.add.sprite(this.curve1.points1[0].x, (this.curve1.points1[0].y - (50 * (i+1))), "e_blue", "shipBlue.png");
-                        this.enemies.push(my.sprite.enemy);
-                    }
+                    my.sprite.enemy = this.add.follower(this.curve1, this.points1[0], this.points1[1], "e_blue");
+                    my.sprite.enemy.setScale(.5)
+                    this.enemies.push(my.sprite.enemy);
+                    my.sprite.enemy.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, on_complete: () => { this.startPathfind(my.sprite.enemy, 20, 20)}});
+
                     break;
             }
-
             this.gameFrame++;
         }
+
+        
         else if(this.ESCKey.isDown) {
             my.sprite.player.visible = true;
             my.sprite.cursor.visible = true;
@@ -215,5 +220,5 @@ class Shmup extends Phaser.Scene {
         }
 
     }
-
 }
+
