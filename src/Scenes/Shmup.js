@@ -64,6 +64,7 @@ class Shmup extends Phaser.Scene {
         // Draw initial graphics
         this.xImages = [];
         this.bullets = [];
+        this.e_bullets = [];
         this.enemies = [];
         this.drawLine();
 
@@ -76,11 +77,11 @@ class Shmup extends Phaser.Scene {
             this.pointer = pointer;
         })
 
-        my.sprite.player = this.add.sprite(300, 800, "player_red", "player_red.png");
+        my.sprite.player = this.add.sprite(300, 800, "player_red");
         my.sprite.player.color = "red";
         my.sprite.player.visible = false;
 
-        my.sprite.cursor = this.add.sprite(300, 800, "cursor", "navigation_n.png");
+        my.sprite.cursor = this.add.sprite(300, 800, "cursor");
         my.sprite.cursor.visible = false;
         
         // Define key bindings
@@ -121,20 +122,35 @@ class Shmup extends Phaser.Scene {
     // a & b are sprites/
     // gameObjs(AABBs)
     {
-    if (Math.abs(a.x - b.x) > (a.rx + b.rx))return false;
+        //console.log("x check: " + (Math.abs(a.x - b.x) > (a.displayWidth / 2 + b.displayWidth / 2)) + ", " + (a.x - b.x) + " > " + (a.displayWidth / 2 + b.displayWidth / 2))
+        //console.log("y check: " + (Math.abs(a.y - b.y) > (a.displayHeight + b.displayHeight)))
+    if (Math.abs(a.x - b.x) > (a.displayWidth / 2 + b.displayWidth / 2))return false;
 
-    if (Math.abs(a.y - b.y) > (a.ry + b.ry)) return false;
+    if (Math.abs(a.y - b.y) > (a.displayHeight + b.displayHeight)) return false;
 
     return true;
+    }
+
+    e_shoot(enemy) {
+        if(this.e_bullets.length < 5 && this.gameActive) {
+            if(enemy.color == "red") {my.sprite.bullet = this.add.sprite(enemy.x, enemy.y, "e_bullet_red"); my.sprite.bullet.color = "red";}
+            else {my.sprite.bullet = this.add.sprite(enemy.x, enemy.y, "e_bullet_blue"); my.sprite.bullet.color = "blue";}
+            let angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, my.sprite.player.x, my.sprite.player.y);
+            my.sprite.bullet.dir = angle;
+            my.sprite.bullet.setScale(.5);
+            my.sprite.bullet.rotation = angle;
+            this.e_bullets.push(my.sprite.bullet);
+        }
     }
 
 
     shoot() {
         if(this.bullets.length < 5 && this.gameActive) {
-            if(my.sprite.player.color == "red") my.sprite.bullet = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "bullet_red", "laserRed12.png");
-            else my.sprite.bullet = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "bullet_blue", "laserBlue12.png");
+            if(my.sprite.player.color == "red") {my.sprite.bullet = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "bullet_red"); my.sprite.bullet.color = "red";}
+            else {my.sprite.bullet = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "bullet_blue"); my.sprite.bullet.color = "blue";}
             let angle = Phaser.Math.Angle.Between(my.sprite.player.x, my.sprite.player.y, this.pointer.x, this.pointer.y);
             my.sprite.bullet.dir = angle;
+            my.sprite.bullet.setScale(.5);
             my.sprite.bullet.rotation = angle;
             this.bullets.push(my.sprite.bullet);
         }
@@ -187,6 +203,8 @@ class Shmup extends Phaser.Scene {
             //console.log(my.sprite.bullet)
             if(this.bullets.length != 0) for (let i = this.bullets.length - 1; i >= 0; i--) {
                 let b = this.bullets[i];
+                // console.log(this.bullets[i]);
+                // console.log(b);
                 //console.log(b.y)
                 //b.y -= 10; 
 
@@ -194,21 +212,61 @@ class Shmup extends Phaser.Scene {
                 b.y += 50 * Math.sin(b.dir);
 
                 if(b.y <= 0 || b.x >= 672 || b.x <= 0 || b.y >= 864) {
-                    b.destroy(1);
+                    
                     this.bullets.splice(i, 1);
+                    b.destroy(1);
+                }
+                if(this.enemies.length != 0) for (let j = this.enemies.length - 1; j >= 0; j--) {
+                    let e = this.enemies[j];
+                    // console.log(this.enemies[j]);
+                    // console.log(e);
+                    if(this.collides(e, b) == true) {
+                        if(e.health <= 1 || e.color != b.color){
+                            e.health = 0;
+                            this.enemies.splice(j, 1);
+                            e.destroy(1);
+                        }
+                        else {
+                            e.health--;
+                            if(e.color == "blue") e.setTexture("e_blue_d");
+                            else e.setTexture("e_red_d");
+                        }
+                        this.bullets.splice(i, 1);
+                        b.destroy(1);
+                    }
+                };
+
+                
+            }
+
+            if(this.e_bullets.length != 0) for (let i = this.e_bullets.length - 1; i >= 0; i--) {
+                let b = this.e_bullets[i];
+                // console.log(this.bullets[i]);
+                // console.log(b);
+                //console.log(b.y)
+                //b.y -= 10; 
+
+                b.x += 20 * Math.cos(b.dir);
+                b.y += 20 * Math.sin(b.dir);
+
+                if(b.y <= 0 || b.x >= 672 || b.x <= 0 || b.y >= 864) {
+                    
+                    this.e_bullets.splice(i, 1);
+                    b.destroy(1);
                 }
             }
 
-            this.enemies.forEach(enemy => {
+            if(this.enemies.length != 0) for (let j = this.enemies.length - 1; j >= 0; j--) {
                 
-                this.bullets.forEach(bullet => {
-                    if(this.collides(enemy, bullet)) {
-                        bullet.destroy(1);
-                        
-                    }
-                });
+                let enemy = this.enemies[j];
+                console.log(this.enemies)
 
+                let prob = 1/90;
+                if(Math.random() < prob) {
+                    this.e_shoot(enemy)
+                }
 
+                if(enemy.delete == true) this.enemies.splice(j, 1);
                 if (enemy.isMoving) {
                     
                     let dx = enemy.targetX - enemy.x;
@@ -224,7 +282,11 @@ class Shmup extends Phaser.Scene {
                         enemy.isMoving = false; // Stop moving once the target is close enough
                     }
                 }
-            });
+                else {
+                    if(this.gameFrame % 60 < 30) enemy.x+= 2;
+                    else enemy.x-= 2;
+                }
+            };
             /**for (let i = this.enemies.length - 1; i >= 0; i--) {
                 let e = this.enemies[i];
                 
@@ -236,19 +298,79 @@ class Shmup extends Phaser.Scene {
             switch(this.gameFrame) {
                 case 60:
                     my.sprite.enemy = this.add.follower(this.curve1, this.points1[0], this.points1[1], "e_blue");
-                    my.sprite.enemy.setScale(.5)
+                    my.sprite.enemy.setScale(.5);
+                    my.sprite.enemy.health = 2;
+                    my.sprite.enemy.color = "blue"
                     this.enemies.push(my.sprite.enemy);
                     my.sprite.enemy.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, onComplete: () => { 
                         my.sprite.enemy.stopFollow();
-                        my.sprite.e = this.add.sprite(my.sprite.enemy.x, my.sprite.enemy.y, "e_blue", "shipBlue.png");
-                        my.sprite.e.setScale(.5);
-                        let i = this.enemies.length - 1;
-                        my.sprite.enemy.destroy(1);
-                        this.enemies.splice(i, 1);
-                        this.enemies.push(my.sprite.e);
-                        my.sprite.e.targetX = 50; // Target X position
-                        my.sprite.e.targetY = 50; // Target Y position
-                        my.sprite.e.isMoving = true;
+                        my.sprite.enemy.delete = true;
+                        if(my.sprite.enemy.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy.x, my.sprite.enemy.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy.health;
+                            my.sprite.e.color = my.sprite.enemy.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy.destroy(1);
+                            
+                            //this.enemies.splice(0, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 50; // Target X position
+                            my.sprite.e.targetY = 50; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 65:
+                    my.sprite.enemy1 = this.add.follower(this.curve1, this.points1[0], this.points1[1], "e_blue");
+                    my.sprite.enemy1.setScale(.5);
+                    my.sprite.enemy1.health = 2;
+                    my.sprite.enemy1.color = "blue"
+                    this.enemies.push(my.sprite.enemy1);
+                    my.sprite.enemy1.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, onComplete: () => { 
+                        my.sprite.enemy1.stopFollow();
+                        my.sprite.enemy1.delete = true;
+                        if(my.sprite.enemy1.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy1.x, my.sprite.enemy1.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy1.health;
+                            my.sprite.e.color = my.sprite.enemy1.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy1.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 150; // Target X position
+                            my.sprite.e.targetY = 50; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 70:
+                    my.sprite.enemy2 = this.add.follower(this.curve1, this.points1[0], this.points1[1], "e_blue");
+                    my.sprite.enemy2.setScale(.5);
+                    my.sprite.enemy2.health = 2;
+                    my.sprite.enemy2.color = "blue"
+                    this.enemies.push(my.sprite.enemy2);
+                    my.sprite.enemy2.startFollow({from: 0, to: 1, delay: 0, duration: 2000, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -90, onComplete: () => { 
+                        my.sprite.enemy2.stopFollow();
+                        my.sprite.enemy2.delete = true;
+                        if(my.sprite.enemy2.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy2.x, my.sprite.enemy2.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy2.health;
+                            my.sprite.e.color = my.sprite.enemy2.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy2.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 250; // Target X position
+                            my.sprite.e.targetY = 50; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
                     }});
                     
                     break;
