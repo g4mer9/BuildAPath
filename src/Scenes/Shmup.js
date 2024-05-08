@@ -10,6 +10,7 @@ class Shmup extends Phaser.Scene {
     txt = undefined;
     lives_txt = undefined;
     speed= 500;
+    score = 0;
 
     constructor(){
         super("pathMaker");
@@ -49,8 +50,8 @@ class Shmup extends Phaser.Scene {
         // Create a curve, for use with the path
         // Initial set of points are only used to ensure there is something on screen to begin with.
         // No need to save these values.
-        this.txt = this.add.text(180, 400, "Game Over - Press ESC",{ font: '32px Press Start 2P'});
-        this.lives_txt = this.add.text(70, 10, "      Lives: 3");
+        this.txt = this.add.text(180, 400, "Game Over - Press ESC", { font: '32px Press Start 2P'});
+        this.lives_txt = this.add.text(70, 10, "      Lives: 3 | Score: " + this.score);
 
         this.points1 = [400, 13, 90, 178, 180, 282, 360, 316, 456, 356, 475, 433, 452, 490, 335, 521, 230, 507, 171, 438];
         this.points2 = [272, 13, 582, 178, 492, 282, 312, 316, 216, 356, 197, 433, 220, 490, 337, 521, 442, 507, 501, 438];
@@ -240,6 +241,8 @@ class Shmup extends Phaser.Scene {
                             this.enemies.splice(j, 1);
                             e.destroy(1);
                             this.sound.play('sfx_explosion');
+                            this.score += 100;
+                            this.lives_txt.setText("      Lives: " + this.lives + " | Score: " + this.score);
                         }
                         else if(e.health < 3) {
                             if(e.color == "blue") e.setTexture("e_blue_d");
@@ -283,7 +286,7 @@ class Shmup extends Phaser.Scene {
                     else if(my.sprite.player.color != b.color) {
                         this.sound.play('sfx_explosion');
                         this.lives--;
-                        this.lives_txt.setText("      Lives: " + this.lives);
+                        this.lives_txt.setText("      Lives: " + this.lives + " | Score: " + this.score);
                         this.actionable = this.gameFrame;
                         my.sprite.player.visible = false;
                         my.sprite.cursor.visible = false;
