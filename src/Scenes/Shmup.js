@@ -8,6 +8,7 @@ class Shmup extends Phaser.Scene {
     lives;
     actionable = 0;
     txt = undefined;
+    lives_txt = undefined;
     speed= 500;
 
     constructor(){
@@ -24,7 +25,10 @@ class Shmup extends Phaser.Scene {
         this.load.image("bullet_red", "laserRed12.png");
         this.load.image("bullet_blue", "laserBlue12.png");
         this.load.image("cursor", "navigation_n.png");
-        //this.load.audio(‘sfx_jump’, ‘assets/jump.wav’);
+        this.load.audio('sfx_player_laser', 'laserRetro_000.ogg');
+        this.load.audio('sfx_explosion', 'explosionCrunch_000.ogg');
+        this.load.audio('sfx_respawn', 'forceField_000.ogg');
+        this.load.audio('sfx_swap', 'laserRetro_003.ogg');
 
         //enemy assets
         this.load.image("e_blue", "shipBlue.png");
@@ -33,6 +37,8 @@ class Shmup extends Phaser.Scene {
         this.load.image("e_red_d", "shipPink_damaged2.png");
         this.load.image("e_bullet_red", "laserRed09.png");
         this.load.image("e_bullet_blue", "laserBlue09.png");
+        this.load.audio('sfx_enemy_laser', 'laserLarge_000.ogg');
+        this.load.audio('sfx_enemy_damaged', 'laserSmall_004.ogg');
         
         //effect assets
         this.load.image("burst_pink", "burst_pink.png");
@@ -44,6 +50,7 @@ class Shmup extends Phaser.Scene {
         // Initial set of points are only used to ensure there is something on screen to begin with.
         // No need to save these values.
         this.txt = this.add.text(180, 400, "Game Over - Press ESC",{ font: '32px Press Start 2P'});
+        this.lives_txt = this.add.text(70, 10, "      Lives: 3");
 
         this.points1 = [400, 13, 90, 178, 180, 282, 360, 316, 456, 356, 475, 433, 452, 490, 335, 521, 230, 507, 171, 438];
         this.points2 = [272, 13, 582, 178, 492, 282, 312, 316, 216, 356, 197, 433, 220, 490, 337, 521, 442, 507, 501, 438];
@@ -60,10 +67,10 @@ class Shmup extends Phaser.Scene {
 
 
         // Initialize Phaser graphics, used to draw lines
-        this.graphics = this.add.graphics();
+        //this.graphics = this.add.graphics();
         this.gameActive = false;
         this.gameFrame = 0;
-        this.lives = 5;
+        this.lives = 3;
 
         
         
@@ -72,7 +79,7 @@ class Shmup extends Phaser.Scene {
         this.bullets = [];
         this.e_bullets = [];
         this.enemies = [];
-        this.drawLine();
+        //this.drawLine();
 
         //onclick
         this.mouseDown = this.input.on('pointerdown', (pointer) => {
@@ -109,21 +116,6 @@ class Shmup extends Phaser.Scene {
     }
 
 
-
-//DELETE ALL THIS LATER --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    // Draws the spline
-    drawLine() {
-        this.graphics.clear();                      // Clear the existing line
-        this.graphics.lineStyle(2, 0xffffff, 1);    // A white line
-        this.curve1.draw(this.graphics, 32);         // Draw the spline
-        this.curve2.draw(this.graphics, 32);         // Draw the spline
-        this.curve3.draw(this.graphics, 32);         // Draw the spline
-        this.curve4.draw(this.graphics, 32);         // Draw the spline
-    }
-
-
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
     collides(a, b) 
     // a & b are sprites/
     // gameObjs(AABBs)
@@ -146,7 +138,7 @@ class Shmup extends Phaser.Scene {
             my.sprite.bullet.setScale(.5);
             my.sprite.bullet.rotation = angle;
             this.e_bullets.push(my.sprite.bullet);
-            //	this.sound.play(key);
+            this.sound.play('sfx_enemy_laser');
         }
     }
 
@@ -160,7 +152,7 @@ class Shmup extends Phaser.Scene {
             my.sprite.bullet.setScale(.5);
             my.sprite.bullet.rotation = angle;
             this.bullets.push(my.sprite.bullet);
-            //	this.sound.play(key);
+            this.sound.play('sfx_player_laser');
         }
     }
 
@@ -199,7 +191,7 @@ class Shmup extends Phaser.Scene {
                     my.sprite.player.color = "red";
                     my.sprite.player.setTexture("player_red");
                 }
-                // this.sound.play(key);
+                this.sound.play('sfx_swap');
             }
 
 
@@ -247,12 +239,12 @@ class Shmup extends Phaser.Scene {
                         if(e.health <= 0){
                             this.enemies.splice(j, 1);
                             e.destroy(1);
-                            //	this.sound.play(key);
+                            this.sound.play('sfx_explosion');
                         }
                         else if(e.health < 3) {
                             if(e.color == "blue") e.setTexture("e_blue_d");
                             else e.setTexture("e_red_d");
-                            //	this.sound.play(key);
+                            this.sound.play('sfx_enemy_damaged');
                         }
                         this.bullets.splice(i, 1);
                         b.destroy(1);
@@ -280,7 +272,7 @@ class Shmup extends Phaser.Scene {
 
                 if(this.actionable ==0 && this.collides(my.sprite.player, b) == true) {
                     if(this.lives <= 1 && my.sprite.player.color != b.color){
-                        // this.sound.play(key);
+                        this.sound.play('sfx_explosion');
                         this.lives = 0;
                         my.sprite.player.visible = false;
                         my.sprite.cursor.visible = false;
@@ -289,8 +281,9 @@ class Shmup extends Phaser.Scene {
 
                     }
                     else if(my.sprite.player.color != b.color) {
-                        // this.sound.play(key);
+                        this.sound.play('sfx_explosion');
                         this.lives--;
+                        this.lives_txt.setText("      Lives: " + this.lives);
                         this.actionable = this.gameFrame;
                         my.sprite.player.visible = false;
                         my.sprite.cursor.visible = false;
@@ -308,7 +301,7 @@ class Shmup extends Phaser.Scene {
                 let enemy = this.enemies[j];
                 
 
-                let prob = 1/70;
+                let prob = 1/90;
                 if(Math.random() < prob) {
                     this.e_shoot(enemy)
                 }
@@ -504,7 +497,7 @@ class Shmup extends Phaser.Scene {
                 
 
                 case 180:
-                    my.sprite.enemy6 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy6 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy6.setScale(.5);
                     my.sprite.enemy6.health = 4;
                     my.sprite.enemy6.color = "red"
@@ -530,7 +523,7 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 case 185:
-                    my.sprite.enemy1 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy1 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy1.setScale(.5);
                     my.sprite.enemy1.health = 4;
                     my.sprite.enemy1.color = "red"
@@ -556,7 +549,7 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 case 190:
-                    my.sprite.enemy8 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy8 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy8.setScale(.5);
                     my.sprite.enemy8.health = 4;
                     my.sprite.enemy8.color = "red"
@@ -582,7 +575,7 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 case 195:
-                    my.sprite.enemy9 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy9 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy9.setScale(.5);
                     my.sprite.enemy9.health = 4;
                     my.sprite.enemy9.color = "red"
@@ -608,7 +601,7 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 case 200:
-                    my.sprite.enemy10 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy10 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy10.setScale(.5);
                     my.sprite.enemy10.health = 4;
                     my.sprite.enemy10.color = "red"
@@ -634,7 +627,7 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 case 205:
-                    my.sprite.enemy11 = this.add.follower(this.curve2, this.points1[0], this.points1[1], "e_red");
+                    my.sprite.enemy11 = this.add.follower(this.curve2, this.points2[0], this.points2[1], "e_red");
                     my.sprite.enemy11.setScale(.5);
                     my.sprite.enemy11.health = 4;
                     my.sprite.enemy11.color = "red"
@@ -660,6 +653,322 @@ class Shmup extends Phaser.Scene {
                     
                     break;
                 
+
+                case 300:
+                    my.sprite.enemy6 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy6.setScale(.5);
+                    my.sprite.enemy6.health = 4;
+                    my.sprite.enemy6.color = "blue"
+                    this.enemies.push(my.sprite.enemy6);
+                    my.sprite.enemy6.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy6.stopFollow();
+                        my.sprite.enemy6.delete = true;
+                        if(my.sprite.enemy6.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy6.x, my.sprite.enemy6.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy6.health;
+                            my.sprite.e.color = my.sprite.enemy6.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy6.destroy(1);
+                            
+                            //this.enemies.splice(0, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 80; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 305:
+                    my.sprite.enemy1 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy1.setScale(.5);
+                    my.sprite.enemy1.health = 4;
+                    my.sprite.enemy1.color = "blue"
+                    this.enemies.push(my.sprite.enemy1);
+                    my.sprite.enemy1.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy1.stopFollow();
+                        my.sprite.enemy1.delete = true;
+                        if(my.sprite.enemy1.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy1.x, my.sprite.enemy1.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy1.health;
+                            my.sprite.e.color = my.sprite.enemy1.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy1.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 180; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 310:
+                    my.sprite.enemy8 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy8.setScale(.5);
+                    my.sprite.enemy8.health = 4;
+                    my.sprite.enemy8.color = "blue"
+                    this.enemies.push(my.sprite.enemy8);
+                    my.sprite.enemy8.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy8.stopFollow();
+                        my.sprite.enemy8.delete = true;
+                        if(my.sprite.enemy8.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy8.x, my.sprite.enemy8.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy8.health;
+                            my.sprite.e.color = my.sprite.enemy8.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy8.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 280; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 315:
+                    my.sprite.enemy9 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy9.setScale(.5);
+                    my.sprite.enemy9.health = 4;
+                    my.sprite.enemy9.color = "blue"
+                    this.enemies.push(my.sprite.enemy9);
+                    my.sprite.enemy9.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy9.stopFollow();
+                        my.sprite.enemy9.delete = true;
+                        if(my.sprite.enemy9.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy9.x, my.sprite.enemy9.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy9.health;
+                            my.sprite.e.color = my.sprite.enemy9.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy9.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 380; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 320:
+                    my.sprite.enemy10 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy10.setScale(.5);
+                    my.sprite.enemy10.health = 4;
+                    my.sprite.enemy10.color = "blue"
+                    this.enemies.push(my.sprite.enemy10);
+                    my.sprite.enemy10.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy10.stopFollow();
+                        my.sprite.enemy10.delete = true;
+                        if(my.sprite.enemy10.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy10.x, my.sprite.enemy10.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy10.health;
+                            my.sprite.e.color = my.sprite.enemy10.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy10.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 480; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 325:
+                    my.sprite.enemy11 = this.add.follower(this.curve3, this.points3[0], this.points3[1], "e_blue");
+                    my.sprite.enemy11.setScale(.5);
+                    my.sprite.enemy11.health = 4;
+                    my.sprite.enemy11.color = "blue"
+                    this.enemies.push(my.sprite.enemy11);
+                    my.sprite.enemy11.startFollow({from: 0, to: 1, delay: 0, duration: 2500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy11.stopFollow();
+                        my.sprite.enemy11.delete = true;
+                        if(my.sprite.enemy11.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy11.x, my.sprite.enemy11.y, "e_blue");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy11.health;
+                            my.sprite.e.color = my.sprite.enemy11.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy11.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 580; // Target X position
+                            my.sprite.e.targetY = 250; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                
+                case 425:
+                    my.sprite.enemy6 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy6.setScale(.5);
+                    my.sprite.enemy6.health = 4;
+                    my.sprite.enemy6.color = "red"
+                    this.enemies.push(my.sprite.enemy6);
+                    my.sprite.enemy6.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy6.stopFollow();
+                        my.sprite.enemy6.delete = true;
+                        if(my.sprite.enemy6.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy6.x, my.sprite.enemy6.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy6.health;
+                            my.sprite.e.color = my.sprite.enemy6.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy6.destroy(1);
+                            
+                            //this.enemies.splice(0, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 80; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 430:
+                    my.sprite.enemy1 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy1.setScale(.5);
+                    my.sprite.enemy1.health = 4;
+                    my.sprite.enemy1.color = "red"
+                    this.enemies.push(my.sprite.enemy1);
+                    my.sprite.enemy1.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy1.stopFollow();
+                        my.sprite.enemy1.delete = true;
+                        if(my.sprite.enemy1.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy1.x, my.sprite.enemy1.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy1.health;
+                            my.sprite.e.color = my.sprite.enemy1.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy1.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 180; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 435:
+                    my.sprite.enemy8 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy8.setScale(.5);
+                    my.sprite.enemy8.health = 4;
+                    my.sprite.enemy8.color = "red"
+                    this.enemies.push(my.sprite.enemy8);
+                    my.sprite.enemy8.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy8.stopFollow();
+                        my.sprite.enemy8.delete = true;
+                        if(my.sprite.enemy8.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy8.x, my.sprite.enemy8.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy8.health;
+                            my.sprite.e.color = my.sprite.enemy8.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy8.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 280; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 440:
+                    my.sprite.enemy9 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy9.setScale(.5);
+                    my.sprite.enemy9.health = 4;
+                    my.sprite.enemy9.color = "red"
+                    this.enemies.push(my.sprite.enemy9);
+                    my.sprite.enemy9.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy9.stopFollow();
+                        my.sprite.enemy9.delete = true;
+                        if(my.sprite.enemy9.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy9.x, my.sprite.enemy9.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy9.health;
+                            my.sprite.e.color = my.sprite.enemy9.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy9.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 380; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 445:
+                    my.sprite.enemy10 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy10.setScale(.5);
+                    my.sprite.enemy10.health = 4;
+                    my.sprite.enemy10.color = "red"
+                    this.enemies.push(my.sprite.enemy10);
+                    my.sprite.enemy10.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy10.stopFollow();
+                        my.sprite.enemy10.delete = true;
+                        if(my.sprite.enemy10.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy10.x, my.sprite.enemy10.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy10.health;
+                            my.sprite.e.color = my.sprite.enemy10.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy10.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 480; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                case 450:
+                    my.sprite.enemy11 = this.add.follower(this.curve4, this.points4[0], this.points4[1], "e_red");
+                    my.sprite.enemy11.setScale(.5);
+                    my.sprite.enemy11.health = 4;
+                    my.sprite.enemy11.color = "red"
+                    this.enemies.push(my.sprite.enemy11);
+                    my.sprite.enemy11.startFollow({from: 0, to: 1, delay: 0, duration: 3500, ease: 'Sine.easeInOut', repeat: 0, yoyo: false, rotateToPath: false, rotationOffset: -80, onComplete: () => { 
+                        my.sprite.enemy11.stopFollow();
+                        my.sprite.enemy11.delete = true;
+                        if(my.sprite.enemy11.health != 0) {
+                            my.sprite.e = this.add.sprite(my.sprite.enemy11.x, my.sprite.enemy11.y, "e_red");
+                            my.sprite.e.setScale(.5);
+                            my.sprite.e.health = my.sprite.enemy11.health;
+                            my.sprite.e.color = my.sprite.enemy11.color;
+                            //let i = this.enemies.length - 1;
+                            my.sprite.enemy11.destroy(1);
+                            
+                            //this.enemies.splice(1, 1);
+                            this.enemies.push(my.sprite.e);
+                            my.sprite.e.targetX = 580; // Target X position
+                            my.sprite.e.targetY = 350; // Target Y position
+                            my.sprite.e.isMoving = true;
+                        }
+                    }});
+                    
+                    break;
+                
+
                 }
             this.gameFrame++;
         }
@@ -670,7 +979,6 @@ class Shmup extends Phaser.Scene {
             my.sprite.player.visible = true;
             my.sprite.cursor.visible = true;
             this.gameActive = true;
-            this.graphics.clear();
         }
         
     }
